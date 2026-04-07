@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIM TRACKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #060810;
+  --s1:      #0b0f1a;
+  --s2:      #0f1520;
+  --s3:      #141c2a;
+  --s4:      #1a2338;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --red:     #ff3d5a;
+  --red2:    rgba(255,61,90,0.10);
+  --teal:    #00e5cc;
+  --teal2:   rgba(0,229,204,0.10);
+  --gold:    #ffb830;
+  --gold2:   rgba(255,184,48,0.10);
+  --purple:  #b48eff;
+  --purple2: rgba(180,142,255,0.10);
+  --green:   #00e676;
+  --green2:  rgba(0,230,118,0.10);
+  --orange:  #ff7043;
+  --t0: #e8edf5;
+  --t1: #7a8fa8;
+  --t2: #3a4d63;
+  --r:  10px;
+  --r2: 14px;
+  --r3: 20px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--t0);
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* BACKGROUND GRID */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,61,90,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,61,90,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,61,90,0.06) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { max-width: 920px; margin: 0 auto; padding: 0 20px 40px; position: relative; z-index: 1; }
+
+/* HEADER */
+.hdr {
+  padding: 36px 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+.hdr-left { display: flex; align-items: center; gap: 16px; }
+.hdr-logo {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, var(--red), #ff1744);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; font-weight: 600; color: #fff;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(255,61,90,0.3);
+}
+.hdr-title { font-size: 24px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+.hdr-title span { color: var(--red); }
+.hdr-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 2px; margin-top: 3px; }
+
+.hdr-right { display: flex; align-items: center; gap: 20px; }
+.hdr-streak { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.hdr-streak-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--green); line-height: 1; }
+.hdr-streak-lbl { font-size: 10px; color: var(--t2); letter-spacing: 1px; }
+
+.hdr-days-left { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.hdr-days-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--gold); line-height: 1; }
+.hdr-days-lbl { font-size: 10px; color: var(--t2); letter-spacing: 1px; }
+
+/* CYCLE SELECTOR */
+.cycle-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px; flex-wrap: wrap;
+}
+.cycle-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 2px; white-space: nowrap; }
+.cycle-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.cycle-btn {
+  padding: 5px 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--s2);
+  color: var(--t2); font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; cursor: pointer; transition: all .15s;
+}
+.cycle-btn.active { border-color: var(--red); color: var(--red); background: var(--red2); }
+.cycle-btn:hover:not(.active) { border-color: var(--border2); color: var(--t1); }
+.cycle-btn-add {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px dashed var(--border2); background: none;
+  color: var(--t1); font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; cursor: pointer; transition: all .15s; line-height: 1;
+}
+.cycle-btn-add:hover { border-color: var(--green); color: var(--green); }
+
+/* TABS */
+.tabs {
+  display: flex; gap: 4px;
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 5px;
+  width: fit-content; margin-bottom: 28px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 8px 20px;
+  background: none; border: none; border-radius: 8px;
+  color: var(--t2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+  cursor: pointer; white-space: nowrap; transition: all .18s;
+}
+.tab.active { background: var(--s3); color: var(--t0); box-shadow: 0 0 0 1px var(--border2); }
+.tab:hover:not(.active) { color: var(--t1); background: var(--s2); }
+
+/* BOTTOM NAV (mobile) */
+.bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,26,0.95);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+}
+.bottom-nav-inner { display: flex; justify-content: space-around; }
+.bn-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border: none; color: var(--t2);
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1px;
+  cursor: pointer; padding: 6px 14px; border-radius: 10px; transition: all .15s;
+}
+.bn-btn.active { color: var(--red); }
+.bn-btn svg { width: 20px; height: 20px; }
+
+/* SECTIONS */
+.sec { display: none; }
+.sec.on { display: block; animation: fadeIn .22s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* CARD */
+.card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 22px 24px; margin-bottom: 14px;
+}
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--t2); margin-bottom: 18px;
+}
+
+/* TAGS */
+.tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; }
+.t-micro  { background: var(--teal2);   color: var(--teal);   border: 1px solid rgba(0,229,204,.2); }
+.t-flik   { background: var(--purple2); color: var(--purple); border: 1px solid rgba(180,142,255,.2); }
+.t-track  { background: var(--gold2);   color: var(--gold);   border: 1px solid rgba(255,184,48,.2); }
+.t-spray  { background: var(--red2);    color: var(--red);    border: 1px solid rgba(255,61,90,.2); }
+.t-univ   { background: var(--green2);  color: var(--green);  border: 1px solid rgba(0,230,118,.2); }
+.t-dm     { background: rgba(255,255,255,.04); color: var(--t1); border: 1px solid var(--border); }
+
+/* SPLIT DAYS */
+.day-list { display: flex; flex-direction: column; gap: 8px; }
+.day-row {
+  display: grid; grid-template-columns: 52px 1fr 44px;
+  align-items: center; gap: 14px;
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 14px 16px;
+  border-left: 3px solid transparent;
+  transition: all .18s; cursor: default;
+  position: relative; overflow: hidden;
+}
+.day-row::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.01));
+  pointer-events: none;
+}
+.day-row:hover { background: var(--s2); transform: translateX(2px); }
+.day-row.done-row { background: var(--s2); border-color: var(--border2); }
+.day-row.pink { border-left-color: var(--red); }
+.day-row.blue { border-left-color: var(--teal); }
+.day-row.pink.done-row { border-left-color: var(--green); }
+.day-row.blue.done-row { border-left-color: var(--green); }
+
+.day-n {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 600;
+  color: var(--t2); text-align: center; line-height: 1; transition: color .18s;
+}
+.day-n.dn { color: var(--green); }
+.day-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.day-goal { font-size: 12px; color: var(--t2); line-height: 1.4; }
+
+.chk {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: none; cursor: pointer; color: var(--t2);
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+  transition: all .18s; flex-shrink: 0;
+}
+.chk:hover { border-color: var(--green); color: var(--green); box-shadow: 0 0 12px rgba(0,230,118,0.2); }
+.chk.on { background: var(--green2); border-color: var(--green); color: var(--green); box-shadow: 0 0 14px rgba(0,230,118,0.25); }
+
+/* CHECK ANIMATION */
+@keyframes checkPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); box-shadow: 0 0 24px rgba(0,230,118,0.5); }
+  100% { transform: scale(1); }
+}
+.chk.pulse { animation: checkPulse .35s ease; }
+
+/* CONFETTI */
+.confetti-particle {
+  position: fixed; pointer-events: none; z-index: 9999;
+  width: 7px; height: 7px; border-radius: 2px;
+  animation: confettiFall 1.1s ease-out forwards;
+}
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translateY(160px) rotate(520deg) scale(0.4); }
+}
+
+/* GOALS PANEL */
+.goal-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+.gc {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 10px 14px;
+  flex: 1; min-width: 160px;
+}
+.gc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.gc-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.gc-sub { font-size: 12px; color: var(--t2); }
+
+/* DIARY */
+.diary-header {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 16px; margin-bottom: 16px;
+}
+.diary-header label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 1.5px; white-space: nowrap; }
+.diary-header input { flex: 1; background: none; border: none; outline: none; font-size: 13px; color: var(--t0); font-family: 'Space Grotesk', sans-serif; }
+.diary-header input::placeholder { color: var(--t2); }
+
+.wk { margin-bottom: 28px; }
+.wk-hdr { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
+.wk-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: var(--t1); }
+
+.dr { display: grid; grid-template-columns: 32px 1fr 44px; gap: 8px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+.dr:last-child { border-bottom: none; }
+.dr-n { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: var(--t2); text-align: center; }
+.dr input { background: none; border: none; outline: none; font-size: 13px; color: var(--t0); font-family: 'Space Grotesk', sans-serif; width: 100%; padding: 5px 8px; border-radius: 6px; transition: background .15s; }
+.dr input:focus { background: var(--s3); }
+.dr input::placeholder { color: var(--t2); }
+
+/* WEEK STAT ROW */
+.wk-stat-section { background: var(--s2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin-top: 12px; }
+.wk-stat-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--t2); margin-bottom: 10px; }
+.wk-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.wk-stat-inp { display: flex; flex-direction: column; gap: 4px; }
+.wk-stat-inp label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 1px; }
+.wk-stat-inp input { background: var(--s3); border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--t0); outline: none; width: 100%; transition: border-color .15s; }
+.wk-stat-inp input:focus { border-color: var(--border2); }
+.wk-stat-inp input::placeholder { color: var(--t2); }
+
+/* STATS PAGE */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.stat-box { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px 20px; position: relative; overflow: hidden; }
+.stat-box::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-box.c-red::after   { background: linear-gradient(90deg, var(--red), transparent); }
+.stat-box.c-teal::after  { background: linear-gradient(90deg, var(--teal), transparent); }
+.stat-box.c-gold::after  { background: linear-gradient(90deg, var(--gold), transparent); }
+.stat-box.c-purple::after{ background: linear-gradient(90deg, var(--purple), transparent); }
+.stat-box.c-green::after { background: linear-gradient(90deg, var(--green), transparent); }
+.sb-l { font-size: 11px; color: var(--t2); margin-bottom: 8px; letter-spacing: .5px; }
+.sb-v { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 600; line-height: 1; }
+.sb-s { font-size: 11px; color: var(--t2); margin-top: 4px; }
+.stat-box.c-red    .sb-v { color: var(--red); }
+.stat-box.c-teal   .sb-v { color: var(--teal); }
+.stat-box.c-gold   .sb-v { color: var(--gold); }
+.stat-box.c-purple .sb-v { color: var(--purple); }
+.stat-box.c-green  .sb-v { color: var(--green); }
+
+.pr { margin-bottom: 14px; }
+.pr-hdr { display: flex; justify-content: space-between; font-size: 11px; color: var(--t2); margin-bottom: 7px; font-family: 'JetBrains Mono', monospace; }
+.pr-bg { height: 5px; background: var(--s3); border-radius: 99px; overflow: hidden; }
+.pr-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+.hmap { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+.hm { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; border: 1px solid var(--border); background: var(--s2); color: var(--t2); transition: all .18s; }
+.hm.done { background: var(--green2); border-color: rgba(0,230,118,0.3); color: var(--green); }
+
+/* SCORE BARS */
+.sc-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.sc-l { font-size: 12px; color: var(--t1); width: 150px; flex-shrink: 0; }
+.sc-t { flex: 1; height: 4px; background: var(--s3); border-radius: 99px; overflow: hidden; }
+.sc-f { height: 100%; border-radius: 99px; }
+.sc-v { font-size: 12px; font-weight: 600; width: 38px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+.tip { margin-top: 16px; padding: 14px 18px; border-left: 3px solid var(--red); background: var(--red2); border-radius: 0 var(--r) var(--r) 0; font-size: 13px; color: var(--t1); line-height: 1.6; }
+.tip b { color: var(--red); }
+
+/* CHART */
+.chart-wrap { margin-top: 14px; overflow-x: auto; }
+.chart-svg { width: 100%; min-width: 260px; }
+
+/* ===== MY STATS TAB ===== */
+.stat-section { margin-bottom: 24px; }
+.stat-section-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: var(--t2); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.stat-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.stat-input-card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px 22px; margin-bottom: 14px; }
+.stat-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+.stat-input-group { display: flex; flex-direction: column; gap: 6px; }
+.stat-input-group label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--t2); display: flex; align-items: center; gap: 5px; }
+.stat-input-group label .hint { color: var(--t2); font-size: 9px; opacity: 0.6; }
+.stat-input-group input { background: var(--s2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: var(--t0); outline: none; width: 100%; transition: border-color .15s, box-shadow .15s; }
+.stat-input-group input:focus { border-color: var(--border2); box-shadow: 0 0 0 3px rgba(255,255,255,0.03); }
+.stat-input-group input::placeholder { color: var(--t2); font-weight: 400; }
+
+.rank-select { background: var(--s2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--t0); outline: none; width: 100%; cursor: pointer; transition: border-color .15s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%233a4d63' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.rank-select:focus { border-color: var(--border2); }
+.rank-select option { background: var(--s3); }
+
+.eval-card { background: var(--s2); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px 22px; margin-top: 14px; }
+.eval-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--t2); margin-bottom: 16px; }
+.eval-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.eval-name { font-size: 13px; font-weight: 500; width: 70px; flex-shrink: 0; }
+.eval-bar-wrap { flex: 1; position: relative; }
+.eval-bar-bg { height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; }
+.eval-bar-fill { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+.eval-bar-markers { display: flex; justify-content: space-between; margin-top: 3px; font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--t2); }
+.eval-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; width: 70px; text-align: right; flex-shrink: 0; }
+.eval-grade { font-size: 10px; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; width: 70px; text-align: center; }
+.grade-bad     { background: rgba(255,61,90,0.12);  color: var(--red);   border: 1px solid rgba(255,61,90,0.2); }
+.grade-normal  { background: rgba(255,184,48,0.12); color: var(--gold);  border: 1px solid rgba(255,184,48,0.2); }
+.grade-good    { background: rgba(0,229,204,0.12);  color: var(--teal);  border: 1px solid rgba(0,229,204,0.2); }
+.grade-great   { background: rgba(0,230,118,0.12);  color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+
+.week-eval-card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px 22px; margin-bottom: 14px; }
+.week-eval-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.week-eval-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--t1); }
+.week-score-badge { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; padding: 4px 14px; border-radius: 8px; border: 1.5px solid; }
+
+.textarea-wrap { position: relative; }
+.stat-textarea { width: 100%; min-height: 80px; background: var(--s2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--t0); line-height: 1.6; resize: vertical; outline: none; transition: border-color .15s; }
+.stat-textarea:focus { border-color: var(--border2); }
+.stat-textarea::placeholder { color: var(--t2); }
+
+/* COMPARISON TABLE */
+.compare-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+.compare-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--t2); text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); font-weight: 500; }
+.compare-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: var(--s2); }
+.compare-table-wrap { overflow-x: auto; }
+.td-delta { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.td-delta.up   { color: var(--green); }
+.td-delta.down { color: var(--red); }
+.td-delta.same { color: var(--t2); }
+
+/* BENCHMARK TABLE */
+.bench-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+.bench-table th { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: var(--t2); padding: 5px 10px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 500; }
+.bench-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.bench-table tr:last-child td { border-bottom: none; }
+.b-bad    { color: var(--red); }
+.b-normal { color: var(--gold); }
+.b-good   { color: var(--teal); }
+.b-great  { color: var(--green); }
+
+/* OVERALL SCORE */
+.overall-score { text-align: center; padding: 28px; background: linear-gradient(135deg, var(--s2), var(--s3)); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 14px; }
+.overall-number { font-family: 'JetBrains Mono', monospace; font-size: 72px; font-weight: 600; line-height: 1; margin-bottom: 8px; }
+.overall-label { font-size: 12px; color: var(--t2); letter-spacing: 2px; }
+.overall-desc { font-size: 14px; color: var(--t1); margin-top: 10px; line-height: 1.5; }
+
+.rank-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; border: 1px solid; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--t2); font-size: 13px; line-height: 1.6; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+
+/* ===== ACHIEVEMENTS ===== */
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.achv {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 16px;
+  display: flex; align-items: center; gap: 12px;
+  transition: all .2s;
+}
+.achv.unlocked { border-color: rgba(255,184,48,0.3); background: rgba(255,184,48,0.05); }
+.achv-icon { font-size: 28px; flex-shrink: 0; filter: grayscale(1) opacity(0.3); transition: filter .3s; }
+.achv.unlocked .achv-icon { filter: none; }
+.achv-info {}
+.achv-name { font-size: 12px; font-weight: 600; color: var(--t1); }
+.achv.unlocked .achv-name { color: var(--gold); }
+.achv-desc { font-size: 11px; color: var(--t2); margin-top: 2px; line-height: 1.3; }
+
+/* XP BAR */
+.xp-bar-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding: 14px 18px; background: var(--s1); border: 1px solid var(--border); border-radius: var(--r2); }
+.xp-level { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: var(--gold); flex-shrink: 0; }
+.xp-info { flex: 1; }
+.xp-label { font-size: 11px; color: var(--t2); margin-bottom: 5px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+.xp-bg { height: 5px; background: var(--s3); border-radius: 99px; overflow: hidden; }
+.xp-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--orange)); border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.xp-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--t1); text-align: right; margin-top: 4px; }
+
+/* RESET BUTTON */
+.btn-reset {
+  background: none; border: 1px solid rgba(255,61,90,0.3);
+  color: var(--red); border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px;
+  padding: 8px 16px; cursor: pointer; transition: all .15s;
+}
+.btn-reset:hover { background: var(--red2); border-color: var(--red); }
+
+/* EXPORT CARD */
+.export-card-preview {
+  background: linear-gradient(135deg, #060810 0%, #0b1220 100%);
+  border: 1px solid rgba(255,61,90,0.2);
+  border-radius: 16px; padding: 24px; margin-bottom: 14px;
+  position: relative; overflow: hidden;
+}
+.export-card-preview::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,61,90,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,61,90,0.03) 1px,transparent 1px);
+  background-size: 30px 30px;
+}
+.btn-export {
+  background: linear-gradient(135deg, var(--red), #ff1744);
+  border: none; color: #fff; border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1.5px;
+  padding: 10px 20px; cursor: pointer; transition: all .15s;
+  box-shadow: 0 4px 14px rgba(255,61,90,0.3);
+}
+.btn-export:hover { box-shadow: 0 6px 20px rgba(255,61,90,0.45); transform: translateY(-1px); }
+
+/* DIARY DAY CELLS */
+.diary-day-cell {
+  width: 72px; height: 72px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--s2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .18s; gap: 4px;
+}
+.diary-day-cell:hover { border-color: var(--border2); background: var(--s3); transform: scale(1.04); }
+.diary-day-cell.done { background: var(--green2); border-color: rgba(0,230,118,0.35); }
+.ddc-num { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--t2); }
+.ddc-check { font-size: 16px; color: var(--t2); }
+.diary-day-cell.done .ddc-num { color: var(--green); }
+.diary-day-cell.done .ddc-check { color: var(--green); }
+
+/* TODAY CARD */
+.today-card {
+  background: linear-gradient(135deg, var(--s2), var(--s3));
+  border: 1px solid var(--border2);
+  border-radius: var(--r2); padding: 20px 22px;
+  border-left: 3px solid var(--red);
+}
+.today-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+.today-card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); letter-spacing: 2px; }
+.today-day-num { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 600; color: var(--t0); line-height: 1; }
+.today-goal { font-size: 13px; color: var(--t1); margin-bottom: 10px; line-height: 1.5; }
+.today-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.btn-start-now {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--red), #ff1744);
+  border: none; color: #fff; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+  letter-spacing: 1.5px; padding: 11px 22px; cursor: pointer;
+  transition: all .18s; box-shadow: 0 4px 16px rgba(255,61,90,0.35);
+  text-decoration: none;
+}
+.btn-start-now:hover { box-shadow: 0 6px 24px rgba(255,61,90,0.5); transform: translateY(-1px); }
+.btn-start-now.done-btn { background: var(--green2); color: var(--green); box-shadow: none; border: 1px solid rgba(0,230,118,0.3); }
+.today-dm-row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.today-dm-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 1px; }
+.tag-dm  { background: rgba(0,229,204,0.1); color: var(--teal); border: 1px solid rgba(0,229,204,0.2); }
+.tag-tdm { background: rgba(180,142,255,0.1); color: var(--purple); border: 1px solid rgba(180,142,255,0.2); }
+
+/* STREAK HEATMAP */
+.streak-hmap { display: flex; gap: 5px; flex-wrap: wrap; }
+.shm-cell {
+  width: 34px; height: 34px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); background: var(--s2); color: var(--t2);
+  transition: all .18s; cursor: pointer;
+}
+.shm-cell.done { background: var(--green2); border-color: rgba(0,230,118,0.35); color: var(--green); }
+.shm-cell.today-cell { border-color: var(--red); color: var(--red); background: var(--red2); box-shadow: 0 0 10px rgba(255,61,90,0.2); }
+.shm-cell.done.today-cell { border-color: var(--green); background: var(--green2); color: var(--green); box-shadow: 0 0 10px rgba(0,230,118,0.3); }
+
+/* WEEKLY RANK BANNER */
+.week-rank-banner {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, rgba(255,184,48,0.08), rgba(255,184,48,0.03));
+  border: 1px solid rgba(255,184,48,0.25); border-radius: var(--r2);
+  padding: 14px 18px; margin-bottom: 14px;
+  animation: rankPulse .6s ease;
+}
+@keyframes rankPulse {
+  0%   { transform: scale(0.97); opacity: 0; }
+  60%  { transform: scale(1.01); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.wrb-icon { font-size: 28px; flex-shrink: 0; }
+.wrb-title { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 3px; }
+.wrb-desc  { font-size: 12px; color: var(--t1); }
+
+/* DM ROW IN DAY */
+.day-dm-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; align-items: center; }
+.day-dm-lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--t2); letter-spacing: 1px; white-space: nowrap; }
+
+/* RANK PRESET BTNS */
+.rank-preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.rank-preset-btn {
+  padding: 5px 11px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--s2);
+  color: var(--t2); font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.rank-preset-btn:hover { border-color: var(--border2); color: var(--t0); }
+.rank-preset-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold2); }
+
+footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t2); letter-spacing: 2px; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--s3); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 20px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--t0);
+  opacity: 0; transition: all .25s; pointer-events: none; z-index: 9998; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 600px) {
+  .tabs { display: none; }
+  .bottom-nav { display: block; }
+  .stat-inputs-row { grid-template-columns: 1fr 1fr; }
+  .wk-stat-grid { grid-template-columns: 1fr 1fr; }
+  .eval-grade { display: none; }
+  .hdr-days-left { display: none; }
+  .hdr-streak { display: none; }
+  body { padding-bottom: 100px; }
+}
+@media (min-width: 601px) {
+  .bottom-nav { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">AT</div>
+    <div>
+      <div class="hdr-title">AIM <span>TRACKER</span></div>
+      <div class="hdr-sub" id="hdr-sub-text">14-DAY SPLIT PROGRAM</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-days-left">
+      <div class="hdr-streak-val" id="days-left-display">14</div>
+      <div class="hdr-streak-lbl">ОСТАЛОСЬ</div>
+    </div>
+    <div class="hdr-streak">
+      <div class="hdr-streak-val" id="streak-display">0</div>
+      <div class="hdr-streak-lbl">STREAK</div>
+    </div>
+  </div>
+</div>
+
+<!-- CYCLE SELECTOR -->
+<div class="cycle-bar">
+  <div class="cycle-label">ЦИКЛ:</div>
+  <div class="cycle-btns" id="cycle-btns"></div>
+  <button class="cycle-btn-add" onclick="addCycle()" title="Новый цикл">+</button>
+</div>
+
+<!-- TABS (desktop) -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('split')">СПЛИТ</button>
+  <button class="tab" onclick="showTab('diary')">ДНЕВНИК</button>
+  <button class="tab" onclick="showTab('stats')">ПРОГРЕСС</button>
+  <button class="tab" onclick="showTab('mystats')">МОЯ СТАТА</button>
+  <button class="tab" onclick="showTab('achv')">АЧИВКИ</button>
+</div>
+
+<!-- ==================== СПЛИТ ==================== -->
+<div id="split" class="sec on">
+
+  <!-- STREAK HEATMAP -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="card-title" style="margin-bottom:0;">СЕРИЯ</div>
+      <div id="streak-chain" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);"></div>
+    </div>
+    <div class="streak-hmap" id="streak-hmap"></div>
+  </div>
+
+  <div id="weekly-rank-zone"></div>
+  <div class="day-list" id="day-list"></div>
+</div>
+
+<!-- ==================== ДНЕВНИК ==================== -->
+<div id="diary" class="sec">
+  <div id="diary-body"></div>
+</div>
+
+<!-- ==================== ПРОГРЕСС ==================== -->
+<div id="stats" class="sec">
+  <div class="stat-grid" id="sg"></div>
+  <div class="card">
+    <div class="card-title">Прогресс курса</div>
+    <div class="pr">
+      <div class="pr-hdr"><span>ВЫПОЛНЕНО</span><span id="prog-txt">0 / 14</span></div>
+      <div class="pr-bg"><div class="pr-fill" id="pf" style="width:0%;background:var(--green);"></div></div>
+    </div>
+    <div class="hmap" id="hmap"></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">График прогресса KD / HS% / ADR</div>
+    <div class="chart-wrap">
+      <svg class="chart-svg" id="progress-chart" viewBox="0 0 500 160" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">Оценка дисциплины</div>
+    <div id="sc-rows"></div>
+    <div class="tip" id="tip">Начни выполнять тренировки, чтобы получить оценку.</div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">Экспорт результатов</div>
+    <div id="export-preview" style="margin-bottom:14px;"></div>
+    <button class="btn-export" onclick="exportCard()">⬇ Скачать карточку результатов</button>
+  </div>
+</div>
+
+<!-- ==================== МОЯ СТАТА ==================== -->
+<div id="mystats" class="sec">
+
+  <div class="stat-section">
+    <div class="stat-section-title">Начальная стата</div>
+    <div class="stat-input-card">
+      <div class="stat-inputs-row">
+        <div class="stat-input-group">
+          <label>KD <span class="hint">(убийства/смерти)</span></label>
+          <input type="number" step="0.01" id="init-kd" placeholder="1.00" min="0" max="10" />
+        </div>
+        <div class="stat-input-group">
+          <label>HS% <span class="hint">(хедшоты)</span></label>
+          <input type="number" step="0.1" id="init-hs" placeholder="20" min="0" max="100" />
+        </div>
+        <div class="stat-input-group">
+          <label>ADR <span class="hint">(урон в раунд)</span></label>
+          <input type="number" step="0.1" id="init-adr" placeholder="130" min="0" max="300" />
+        </div>
+      </div>
+      <div class="stat-inputs-row" style="margin-bottom:0;">
+        <div class="stat-input-group">
+          <label>РАНГ</label>
+          <select class="rank-select" id="init-rank">
+            <option value="">— выбери ранг —</option>
+            <optgroup label="Iron"><option value="iron1">Iron 1</option><option value="iron2">Iron 2</option><option value="iron3">Iron 3</option></optgroup>
+            <optgroup label="Bronze"><option value="bronze1">Bronze 1</option><option value="bronze2">Bronze 2</option><option value="bronze3">Bronze 3</option></optgroup>
+            <optgroup label="Silver"><option value="silver1">Silver 1</option><option value="silver2">Silver 2</option><option value="silver3">Silver 3</option></optgroup>
+            <optgroup label="Gold"><option value="gold1">Gold 1</option><option value="gold2">Gold 2</option><option value="gold3">Gold 3</option></optgroup>
+            <optgroup label="Platinum"><option value="plat1">Platinum 1</option><option value="plat2">Platinum 2</option><option value="plat3">Platinum 3</option></optgroup>
+            <optgroup label="Diamond"><option value="diamond1">Diamond 1</option><option value="diamond2">Diamond 2</option><option value="diamond3">Diamond 3</option></optgroup>
+            <optgroup label="Ascendant"><option value="asc1">Ascendant 1</option><option value="asc2">Ascendant 2</option><option value="asc3">Ascendant 3</option></optgroup>
+            <optgroup label="Immortal+"><option value="imm1">Immortal 1</option><option value="imm2">Immortal 2</option><option value="imm3">Immortal 3</option><option value="radiant">Radiant</option></optgroup>
+          </select>
+        </div>
+        <div class="stat-input-group" style="grid-column: span 2;">
+          <label>ЗАМЕТКА</label>
+          <input type="text" id="init-note" placeholder="Опиши своё начальное ощущение..." />
+        </div>
+      </div>
+    </div>
+    <div id="init-eval"></div>
+  </div>
+
+  <div class="stat-section">
+    <div class="stat-section-title">Конец недели 1 (дни 1–7)</div>
+    <div class="week-eval-card" id="week1-card">
+      <div class="stat-inputs-row">
+        <div class="stat-input-group"><label>KD</label><input type="number" step="0.01" id="w1-kd" placeholder="1.00" min="0" max="10" /></div>
+        <div class="stat-input-group"><label>HS%</label><input type="number" step="0.1" id="w1-hs" placeholder="20" min="0" max="100" /></div>
+        <div class="stat-input-group"><label>ADR</label><input type="number" step="0.1" id="w1-adr" placeholder="130" min="0" max="300" /></div>
+      </div>
+      <div class="stat-input-group" style="margin-bottom:12px;"><label>КАК ПРОШЛА НЕДЕЛЯ</label><textarea class="stat-textarea" id="w1-note" placeholder="Что улучшилось? Что ещё тяжело даётся?"></textarea></div>
+      <div id="w1-eval"></div>
+    </div>
+  </div>
+
+  <div class="stat-section">
+    <div class="stat-section-title">Конец недели 2 (дни 8–14)</div>
+    <div class="week-eval-card" id="week2-card">
+      <div class="stat-inputs-row">
+        <div class="stat-input-group"><label>KD</label><input type="number" step="0.01" id="w2-kd" placeholder="1.00" min="0" max="10" /></div>
+        <div class="stat-input-group"><label>HS%</label><input type="number" step="0.1" id="w2-hs" placeholder="20" min="0" max="100" /></div>
+        <div class="stat-input-group"><label>ADR</label><input type="number" step="0.1" id="w2-adr" placeholder="130" min="0" max="300" /></div>
+      </div>
+      <div class="stat-input-group" style="margin-bottom:12px;"><label>ИТОГОВЫЕ ВПЕЧАТЛЕНИЯ</label><textarea class="stat-textarea" id="w2-note" placeholder="Как изменился аим за 14 дней?"></textarea></div>
+      <div id="w2-eval"></div>
+    </div>
+  </div>
+
+  <div class="stat-section">
+    <div class="stat-section-title">Сравнение прогресса</div>
+    <div id="progress-compare" class="compare-table-wrap">
+      <div class="empty-state"><div class="empty-icon">📊</div><div>Заполни начальную стату и хотя бы один недельный результат,<br>чтобы увидеть прогресс.</div></div>
+    </div>
+  </div>
+
+  <div class="stat-section">
+    <div class="stat-section-title">Ориентиры по уровням</div>
+    <div class="card">
+      <table class="bench-table">
+        <thead><tr><th>Метрика</th><th class="b-bad">Слабо</th><th class="b-normal">Норма</th><th class="b-good">Хорошо</th><th class="b-great">Идеал</th></tr></thead>
+        <tbody>
+          <tr><td><b>KD</b></td><td class="b-bad">&lt; 0.9</td><td class="b-normal">0.9 – 1.3</td><td class="b-good">1.3 – 2.0</td><td class="b-great">&gt; 2.0</td></tr>
+          <tr><td><b>HS%</b></td><td class="b-bad">&lt; 15%</td><td class="b-normal">15 – 22%</td><td class="b-good">22 – 35%</td><td class="b-great">&gt; 35%</td></tr>
+          <tr><td><b>ADR</b></td><td class="b-bad">&lt; 100</td><td class="b-normal">100 – 145</td><td class="b-good">145 – 180</td><td class="b-great">&gt; 180</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; font-size:11px; color:var(--t2); line-height:1.6; font-family:'JetBrains Mono',monospace;">
+        * Ориентиры для Valorant. KD &gt; 1.3 = реально хорошо, &gt; 2.0 = топ игрок. HS &gt; 22% = уверенная точность. ADR &gt; 145 = стабильный урон.
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-section">
+    <div class="stat-section-title">Сброс данных</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--t1);margin-bottom:14px;line-height:1.6;">Сбросить только текущий цикл или все данные целиком.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-reset" onclick="resetCycle()">Сбросить текущий цикл</button>
+        <button class="btn-reset" onclick="resetAll()" style="border-color:rgba(255,61,90,0.6);">Сбросить всё</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== АЧИВКИ ==================== -->
+<div id="achv" class="sec">
+  <div class="xp-bar-wrap" id="xp-bar-wrap"></div>
+  <div class="card">
+    <div class="card-title">Достижения</div>
+    <div class="achievements-grid" id="achv-grid"></div>
+  </div>
+</div>
+
+<footer>AIM TRACKER — MULTI-CYCLE SPLIT PROGRAM</footer>
+</div><!-- /app -->
+
+<!-- BOTTOM NAV (mobile) -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bn-btn active" id="bn-split" onclick="showTab('split')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      СПЛИТ
+    </button>
+    <button class="bn-btn" id="bn-diary" onclick="showTab('diary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      ДНЕВНИК
+    </button>
+    <button class="bn-btn" id="bn-stats" onclick="showTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      ПРОГРЕСС
+    </button>
+    <button class="bn-btn" id="bn-mystats" onclick="showTab('mystats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      СТАТА
+    </button>
+    <button class="bn-btn" id="bn-achv" onclick="showTab('achv')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      АЧИВКИ
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================
+   DATA
+========================================= */
+const DAYS = [
+  // День 1 (синяя строка)
+  {
+    day: 1,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: '',
+    tdm: 'Тдм ×3'
+  },
+
+  // День 2 (красная/розовая строка)
+  {
+    day: 2,
+    t: 'pink',
+    goal: 'Фликинг, трекинг, спрей',
+    tags: [
+      ['t-flik', '100 ботов на скорость 3 мин'],
+      ['t-track', 'Боты стоят 6 мин трекинг'],
+      ['t-spray', 'Спрей трансфер 3 мин'],
+      ['t-spray', 'Спрей в бота мишень 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×2 · 2 сек челенж шериф ×1',
+    tdm: ''
+  },
+
+  // День 3 (фиолетовая строка)
+  {
+    day: 3,
+    t: 'purple',
+    goal: 'Фликинг, точность',
+    tags: [
+      ['t-flik', 'Хард боты 6 мин'],
+      ['t-flik', '100 ботов на скорость 6 мин'],
+      ['t-univ', '100 ботов на точность с шерифа 3 мин']
+    ],
+    dm: 'Вандал берсты ×1 · Шериф тапы ×2',
+    tdm: ''
+  },
+
+  // День 4 (синяя строка)
+  {
+    day: 4,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×1',
+    tdm: 'Тдм ×2'
+  },
+
+  // День 5 (красная/розовая строка)
+  {
+    day: 5,
+    t: 'pink',
+    goal: 'Фликинг, трекинг, спрей',
+    tags: [
+      ['t-flik', '100 ботов на скорость 3 мин'],
+      ['t-track', 'Боты стоят 6 мин трекинг'],
+      ['t-track', 'Боты двигаются 3 мин'],
+      ['t-spray', 'Спрей трансфер 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×2 · 2 сек челенж шериф ×1',
+    tdm: ''
+  },
+
+  // День 6 (синяя строка)
+  {
+    day: 6,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: '',
+    tdm: 'Тдм ×3'
+  },
+
+  // День 7 (фиолетовая строка)
+  {
+    day: 7,
+    t: 'purple',
+    goal: 'Фликинг, точность',
+    tags: [
+      ['t-flik', 'Хард боты 6 мин'],
+      ['t-flik', '100 ботов на скорость 6 мин'],
+      ['t-univ', '100 ботов на точность с шерифа 3 мин']
+    ],
+    dm: 'Вандал берсты ×1 · Шериф тапы ×2',
+    tdm: ''
+  },
+
+  // День 8 (синяя строка)
+  {
+    day: 8,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: '',
+    tdm: 'Тдм ×3'
+  },
+
+  // День 9 (красная/розовая строка)
+  {
+    day: 9,
+    t: 'pink',
+    goal: 'Фликинг, трекинг, спрей',
+    tags: [
+      ['t-flik', '100 ботов на скорость 3 мин'],
+      ['t-track', 'Боты стоят 6 мин трекинг'],
+      ['t-spray', 'Спрей трансфер 3 мин'],
+      ['t-spray', 'Спрей в бота мишень 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×2 · 2 сек челенж шериф ×1',
+    tdm: ''
+  },
+
+  // День 10 (фиолетовая строка)
+  {
+    day: 10,
+    t: 'purple',
+    goal: 'Фликинг, точность',
+    tags: [
+      ['t-flik', 'Хард боты 6 мин'],
+      ['t-flik', '100 ботов на скорость 6 мин'],
+      ['t-univ', '100 ботов на точность с шерифа 3 мин']
+    ],
+    dm: 'Вандал берсты ×1 · Шериф тапы ×2',
+    tdm: ''
+  },
+
+  // День 11 (синяя строка)
+  {
+    day: 11,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×1',
+    tdm: 'Тдм ×2'
+  },
+
+  // День 12 (красная/розовая строка)
+  {
+    day: 12,
+    t: 'pink',
+    goal: 'Фликинг, трекинг, спрей',
+    tags: [
+      ['t-flik', '100 ботов на скорость 3 мин'],
+      ['t-track', 'Боты стоят 6 мин трекинг'],
+      ['t-track', 'Боты двигаются 3 мин'],
+      ['t-spray', 'Спрей трансфер 3 мин']
+    ],
+    dm: 'Вандал или Фантом фри ×2 · 2 сек челенж шериф ×1',
+    tdm: ''
+  },
+
+  // День 13 (синяя строка)
+  {
+    day: 13,
+    t: 'blue',
+    goal: 'Микродоводка, фликинг, трекинг',
+    tags: [
+      ['t-micro', 'Тапы 6 мин'],
+      ['t-micro', 'Дабл тапы 3 мин'],
+      ['t-flik', 'Хард боты 3 мин'],
+      ['t-track', 'Боты двигаются 3 мин']
+    ],
+    dm: '',
+    tdm: 'Тдм ×3'
+  },
+
+  // День 14 (фиолетовая строка)
+  {
+    day: 14,
+    t: 'purple',
+    goal: 'Фликинг, точность',
+    tags: [
+      ['t-flik', 'Хард боты 6 мин'],
+      ['t-flik', '100 ботов на скорость 6 мин'],
+      ['t-univ', '100 ботов на точность с шерифа 3 мин']
+    ],
+    dm: 'Вандал берсты ×1 · Шериф тапы ×2',
+    tdm: ''
+  }
+];
+const RANK_LIST = [
+  {id:'iron1',name:'Iron 1',color:'#7a8a9a'},{id:'iron2',name:'Iron 2',color:'#7a8a9a'},{id:'iron3',name:'Iron 3',color:'#7a8a9a'},
+  {id:'bronze1',name:'Bronze 1',color:'#cd7f32'},{id:'bronze2',name:'Bronze 2',color:'#cd7f32'},{id:'bronze3',name:'Bronze 3',color:'#cd7f32'},
+  {id:'silver1',name:'Silver 1',color:'#aab0c0'},{id:'silver2',name:'Silver 2',color:'#aab0c0'},{id:'silver3',name:'Silver 3',color:'#aab0c0'},
+  {id:'gold1',name:'Gold 1',color:'#f0b429'},{id:'gold2',name:'Gold 2',color:'#f0b429'},{id:'gold3',name:'Gold 3',color:'#f0b429'},
+  {id:'plat1',name:'Platinum 1',color:'#2ec4b6'},{id:'plat2',name:'Platinum 2',color:'#2ec4b6'},{id:'plat3',name:'Platinum 3',color:'#2ec4b6'},
+  {id:'diamond1',name:'Diamond 1',color:'#5ba3dc'},{id:'diamond2',name:'Diamond 2',color:'#5ba3dc'},{id:'diamond3',name:'Diamond 3',color:'#5ba3dc'},
+  {id:'asc1',name:'Ascendant 1',color:'#3dd68c'},{id:'asc2',name:'Ascendant 2',color:'#3dd68c'},{id:'asc3',name:'Ascendant 3',color:'#3dd68c'},
+  {id:'imm1',name:'Immortal 1',color:'#e63946'},{id:'imm2',name:'Immortal 2',color:'#e63946'},{id:'imm3',name:'Immortal 3',color:'#e63946'},
+  {id:'radiant',name:'Radiant',color:'#f4d03f'}
+];
+
+const ACHIEVEMENTS = [
+  { id:'first_blood', icon:'🎯', name:'First Blood',    desc:'Выполни первую тренировку',         check: (S)=> countDone(S)>=1 },
+  { id:'week1',       icon:'📅', name:'Неделя пройдена',desc:'Заверши 7 дней',                    check: (S)=> countDone(S)>=7 },
+  { id:'full_course', icon:'🏆', name:'Курс завершён',  desc:'Выполни все 14 дней',               check: (S)=> countDone(S)>=14 },
+  { id:'streak3',     icon:'🔥', name:'Огонь',          desc:'3 дня подряд',                      check: (S)=> calcStreak(S)>=3 },
+  { id:'streak7',     icon:'⚡', name:'Машина',          desc:'7 дней подряд',                    check: (S)=> calcStreak(S)>=7 },
+  { id:'streak14',    icon:'💀', name:'Без пропусков',  desc:'Все 14 дней подряд',                check: (S)=> calcStreak(S)>=14 },
+  { id:'diary5',      icon:'📝', name:'Дневник',        desc:'Запиши заметки к 5 дням',           check: (S)=> countNotes(S)>=5 },
+  { id:'diary14',     icon:'📖', name:'Летописец',      desc:'Заполни все 14 заметок',            check: (S)=> countNotes(S)>=14 },
+  { id:'sniper',      icon:'🎯', name:'Снайпер',        desc:'Введи HS% > 35%',                  check: (S)=> parseFloat(S.w2Hs||S.w1Hs||S.initHs)>35 },
+  { id:'two_cycles',  icon:'🔄', name:'Второй цикл',    desc:'Начни цикл 2',                     check: (S,gs)=> (gs.cycles||[]).length>=2 },
+  { id:'three_cycles',icon:'🌀', name:'Задрот',         desc:'Пройди 3 цикла до конца',          check: (S,gs)=> {
+    const cs = gs.cycles||[]; let done=0;
+    cs.forEach(c=>{ if(countDoneFromCycle(c)>=14) done++; }); return done>=3;
+  }},
+  { id:'perfectionist',icon:'✨',name:'Перфекционист',  desc:'100% курса + все заметки заполнены',check: (S)=> countDone(S)>=14 && countNotes(S)>=14 },
+];
+
+/* =========================================
+   HELPERS
+========================================= */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');
+}
+function findRank(id) { return RANK_LIST.find(r=>r.id===id)||null; }
+
+function countDone(S) {
+  let n=0; for(let i=1;i<=14;i++) if(S.done&&S.done[i]) n++; return n;
+}
+function countDoneFromCycle(cyc) {
+  let n=0; for(let i=1;i<=14;i++) if(cyc.done&&cyc.done[i]) n++; return n;
+}
+function countNotes(S) {
+  let n=0;
+  for(let k in (S.notes||{})) { if(S.notes[k]&&S.notes[k].trim()) n++; }
+  return n;
+}
+// BUG FIX: streak counts consecutive from day 1
+function calcStreak(S) {
+  let streak=0;
+  for(let i=1;i<=14;i++) {
+    if(S.done&&S.done[i]) streak++;
+    else break;
+  }
+  return streak;
+}
+
+/* =========================================
+   SOUND
+========================================= */
+function playCheckSound() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(660, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime+0.08);
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.25);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime+0.25);
+  } catch(e) {}
+}
+
+/* =========================================
+   CONFETTI
+========================================= */
+function spawnConfetti(x, y) {
+  const colors = ['#ff3d5a','#00e5cc','#ffb830','#b48eff','#00e676'];
+  for(let i=0;i<14;i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-particle';
+    p.style.cssText = `
+      left:${x + (Math.random()-0.5)*60}px;
+      top:${y}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      transform:rotate(${Math.random()*360}deg);
+      animation-duration:${0.8+Math.random()*0.5}s;
+      animation-delay:${Math.random()*0.1}s;
+    `;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 1400);
+  }
+}
+
+/* =========================================
+   TOAST
+========================================= */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =========================================
+   STATE + CYCLES
+========================================= */
+let GS = {}; // global state: { cycles: [...], currentCycle: 0 }
+try { GS = JSON.parse(localStorage.getItem('atrk3')||'{}'); } catch(e) {}
+GS.cycles = GS.cycles || [];
+GS.currentCycle = GS.currentCycle || 0;
+if(GS.cycles.length===0) GS.cycles.push(newCycleObj());
+
+function newCycleObj() {
+  return { done:{}, notes:{}, startNote:'', initKd:'', initHs:'', initAdr:'', initRank:'', initNote:'', w1Kd:'', w1Hs:'', w1Adr:'', w1Note:'', w2Kd:'', w2Hs:'', w2Adr:'', w2Note:'', createdAt: Date.now() };
+}
+
+function S() { return GS.cycles[GS.currentCycle]; }
+function save() { try { localStorage.setItem('atrk3', JSON.stringify(GS)); } catch(e) { showToast('⚠ Не удалось сохранить (переполнен localStorage)'); } }
+
+/* =========================================
+   CYCLES UI
+========================================= */
+function renderCycleBar() {
+  const wrap = document.getElementById('cycle-btns');
+  let h = '';
+  GS.cycles.forEach((c, i) => {
+    const done = countDoneFromCycle(c);
+    const active = i===GS.currentCycle ? ' active' : '';
+    h += `<button class="cycle-btn${active}" onclick="switchCycle(${i})">Цикл ${i+1} <span style="opacity:.6;font-size:10px;">${done}/14</span></button>`;
+  });
+  wrap.innerHTML = h;
+}
+
+window.switchCycle = function(i) {
+  GS.currentCycle = i; save();
+  renderCycleBar();
+  renderSplit(); renderDiary(); updateHeaderCounters();
+  const tab = document.querySelector('.tab.active');
+  if(tab) {
+    const name = ['split','diary','stats','mystats','achv'].find(n=>document.getElementById(n).classList.contains('on'));
+    if(name==='stats') renderStats();
+    if(name==='mystats') initMyStats();
+    if(name==='achv') renderAchievements();
+  }
+};
+
+window.addCycle = function() {
+  GS.cycles.push(newCycleObj());
+  GS.currentCycle = GS.cycles.length-1;
+  save(); renderCycleBar();
+  renderSplit(); renderDiary(); updateHeaderCounters();
+  showToast(`🔄 Цикл ${GS.currentCycle+1} начат!`);
+};
+
+/* =========================================
+   TABS
+========================================= */
+window.showTab = function(name) {
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    const names=['split','diary','stats','mystats','achv'];
+    el.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.sec').forEach(el=>el.classList.remove('on'));
+  document.getElementById(name).classList.add('on');
+  document.querySelectorAll('.bn-btn').forEach(el=>el.classList.remove('active'));
+  const bn = document.getElementById('bn-'+name);
+  if(bn) bn.classList.add('active');
+  if(name==='stats')   renderStats();
+  if(name==='mystats') initMyStats();
+  if(name==='achv')    renderAchievements();
+};
+
+/* =========================================
+   HEADER COUNTERS
+========================================= */
+function updateHeaderCounters() {
+  const cur = S();
+  const streak = calcStreak(cur);
+  document.getElementById('streak-display').textContent = streak;
+
+  let done=0; for(let i=1;i<=14;i++) if(cur.done[i]) done++;
+  const left = 14-done;
+  document.getElementById('days-left-display').textContent = left;
+  document.getElementById('hdr-sub-text').textContent = `ЦИКЛ ${GS.currentCycle+1} — 14-DAY SPLIT`;
+}
+
+/* =========================================
+   TODAY CARD + STREAK HMAP + WEEKLY RANK
+========================================= */
+function renderTodayCard() {
+  const cur = S();
+  const done = countDone(cur);
+  const nextDay = Math.min(done + 1, 14);
+  const d = DAYS[nextDay - 1];
+  const isDone = !!cur.done[nextDay];
+  const el = document.getElementById('today-card');
+  if(!el || !d) return;
+
+  let tags = d.tags.map(([cls,lbl])=>`<span class="tag ${cls}">${lbl}</span>`).join('');
+  let dmRow = '';
+  if(d.dm)  dmRow += `<span class="tag tag-dm">🎯 ДМ: ${d.dm}</span>`;
+  if(d.tdm) dmRow += `<span class="tag tag-tdm">💀 ТДМ: ${d.tdm}</span>`;
+
+  el.innerHTML = `
+    <div class="today-card-top">
+      <div>
+        <div class="today-card-label">СЕГОДНЯ</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <div class="today-day-num">ДЕНЬ ${d.day}</div>
+        </div>
+      </div>
+      <button class="btn-start-now${isDone?' done-btn':''}" onclick="togDayFromCard(${d.day})">
+        ${isDone ? '✓ ВЫПОЛНЕНО' : '▶ НАЧАТЬ СЕЙЧАС'}
+      </button>
+    </div>
+    <div class="today-goal">${d.goal}</div>
+    <div class="today-tags">${tags}</div>
+    ${dmRow ? `<div class="today-dm-row">${dmRow}</div>` : ''}
+  `;
+}
+
+window.togDayFromCard = function(day) {
+  const cur = S();
+  cur.done[day] = !cur.done[day];
+  save();
+  if(cur.done[day]) { playCheckSound(); spawnConfettiCenter(); checkNewAchievements(); }
+  renderTodayCard();
+  renderStreakHmap();
+  renderWeeklyRank();
+  updateHeaderCounters();
+  renderCycleBar();
+};
+
+function spawnConfettiCenter() {
+  spawnConfetti(window.innerWidth/2, window.innerHeight/3);
+}
+
+function renderStreakHmap() {
+  const cur = S();
+  const streak = calcStreak(cur);
+  const done = countDone(cur);
+  document.getElementById('streak-chain').textContent = streak > 0 ? `🔥 ${streak} ПОДРЯД` : '';
+  let h = '';
+  for(let i=1;i<=14;i++) {
+    const ok = !!cur.done[i];
+    const isNext = i === Math.min(done+1, 14) && !cur.done[i];
+    h += `<div class="shm-cell${ok?' done':''}${isNext?' today-cell':''}" onclick="togDayHmap(${i})">${i}</div>`;
+  }
+  document.getElementById('streak-hmap').innerHTML = h;
+}
+
+window.togDayHmap = function(day) {
+  const cur = S();
+  cur.done[day] = !cur.done[day];
+  save();
+  if(cur.done[day]) { playCheckSound(); spawnConfettiCenter(); checkNewAchievements(); }
+  renderTodayCard(); renderStreakHmap(); renderWeeklyRank(); updateHeaderCounters(); renderCycleBar();
+};
+
+function renderWeeklyRank() {
+  const cur = S();
+  // Week 1: days 1-7, Week 2: days 8-14
+  const w1 = [1,2,3,4,5,6,7].filter(d=>cur.done[d]).length;
+  const w2 = [8,9,10,11,12,13,14].filter(d=>cur.done[d]).length;
+  const done = countDone(cur);
+
+  const banners = [];
+  if(w1 >= 5 && done <= 14) {
+    banners.push({icon:'🔥', title:'НЕДЕЛЯ 1 — ПРОЙДЕНА', desc:`${w1}/7 дней выполнено. Механика улучшается — продолжай.`});
+  }
+  if(w2 >= 5) {
+    banners.push({icon:'🏆', title:'НЕДЕЛЯ 2 — ЗАВЕРШЕНА', desc:`${w2}/7 дней. Полный цикл почти готов!`});
+  }
+  if(done >= 14) {
+    banners.push({icon:'💎', title:'ЦИКЛ ЗАВЕРШЁН', desc:'Все 14 дней выполнены. Ты прошёл полный курс!'});
+  }
+
+  let container = document.getElementById('weekly-rank-zone');
+  if(!container) return;
+  container.innerHTML = banners.map(b=>`
+    <div class="week-rank-banner">
+      <div class="wrb-icon">${b.icon}</div>
+      <div><div class="wrb-title">${b.title}</div><div class="wrb-desc">${b.desc}</div></div>
+    </div>
+  `).join('');
+}
+
+/* =========================================
+   SPLIT
+========================================= */
+function renderSplit() {
+  const cur = S();
+  let h = '';
+  DAYS.forEach(d => {
+    const ok = !!cur.done[d.day];
+    let tags = d.tags.map(([cls,lbl])=>`<span class="tag ${cls}">${lbl}</span>`).join('');
+    let dmParts = [];
+    if(d.dm)  dmParts.push(`<span class="tag tag-dm">🎯 ${d.dm}</span>`);
+    if(d.tdm) dmParts.push(`<span class="tag tag-tdm">💀 ${d.tdm}</span>`);
+    const dmRow = dmParts.length ? `<div class="day-dm-row">${dmParts.join('')}</div>` : '';
+
+    h += `<div class="day-row ${d.t}${ok?' done-row':''}">`;
+    h += `<div class="day-n${ok?' dn':''}" id="dn${d.day}">${d.day}</div>`;
+    h += `<div><div class="day-tags">${tags}</div><div class="day-goal">${d.goal}</div>${dmRow}</div>`;
+    h += `</div>`;
+  });
+  document.getElementById('day-list').innerHTML = h;
+  renderStreakHmap();
+  renderWeeklyRank();
+  updateHeaderCounters();
+}
+
+window.togDay = function(d) {
+  // kept for compat — delegates to hmap toggle
+  togDayHmap(d);
+};
+
+/* =========================================
+   DIARY
+========================================= */
+function renderDiary() {
+  const cur = S();
+  const weeks = [
+    {label:'WEEK 01', days:[1,2,3,4,5,6,7]},
+    {label:'WEEK 02', days:[8,9,10,11,12,13,14]}
+  ];
+  let h='';
+  weeks.forEach(wk=>{
+    h+=`<div class="wk">`;
+    h+=`<div class="wk-hdr"><div class="wk-label">${wk.label} — ДНИ ${wk.days[0]}–${wk.days[wk.days.length-1]}</div></div>`;
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">`;
+    wk.days.forEach(day=>{
+      const ok=!!cur.done[day];
+      const d = DAYS[day-1];
+      h+=`<div class="diary-day-cell${ok?' done':''}" onclick="togDiaryCell(${day})" title="День ${day}: ${d.goal}">
+        <div class="ddc-num">${day}</div>
+        <div class="ddc-check">${ok?'✓':'○'}</div>
+      </div>`;
+    });
+    h+=`</div>`;
+    h+=`</div>`;
+  });
+  document.getElementById('diary-body').innerHTML = h;
+}
+
+window.togDiaryCell = function(day) {
+  const cur=S(); cur.done[day]=!cur.done[day]; save();
+  if(cur.done[day]) { playCheckSound(); spawnConfettiCenter(); checkNewAchievements(); }
+  renderDiary(); renderSplit();
+};
+
+window.togDiary = function(d) {
+  const cur=S(); cur.done[d]=!cur.done[d]; save();
+  if(cur.done[d]) { playCheckSound(); checkNewAchievements(); }
+  renderDiary(); renderSplit();
+};
+
+/* =========================================
+   STATS (PROGRESS)
+========================================= */
+function renderStats() {
+  const cur = S();
+  let cnt=0;
+  for(let i=1;i<=14;i++) if(cur.done[i]) cnt++;
+  const pct = Math.round(cnt/14*100);
+  const mins = cnt*40;
+  const streak = calcStreak(cur);
+
+  function sb(cls,lbl,val,sub) {
+    return `<div class="stat-box ${cls}"><div class="sb-l">${lbl}</div><div class="sb-v">${val}</div><div class="sb-s">${sub}</div></div>`;
+  }
+  document.getElementById('sg').innerHTML =
+    sb('c-red',  'Дней выполнено', cnt,    'из 14') +
+    sb('c-teal', 'Серия подряд',   streak, 'дней') +
+    sb('c-gold', 'Минут в трекере',mins,   Math.round(mins/60*10)/10+' ч') +
+    sb('c-green','Выполнение',     pct+'%','курса');
+
+  document.getElementById('prog-txt').textContent = cnt+' / 14';
+  // Animate progress bar
+  const pf = document.getElementById('pf');
+  pf.style.width = '0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ pf.style.width = pct+'%'; }));
+
+  let hh='';
+  for(let i=1;i<=14;i++) hh+=`<div class="hm${cur.done[i]?' done':''}">${i}</div>`;
+  document.getElementById('hmap').innerHTML=hh;
+
+  const nf = countNotes(cur);
+  const scores = [
+    {l:'Регулярность',     v:pct,                                    c:'var(--green)'},
+    {l:'Серия подряд',     v:Math.min(100,Math.round(streak/7*100)), c:'var(--teal)'},
+    {l:'Прогресс курса',   v:pct,                                    c:'var(--red)'},
+    {l:'Заполн. дневника', v:Math.min(100,Math.round(nf/14*100)),    c:'var(--purple)'}
+  ];
+  let sh='';
+  scores.forEach(sc=>{
+    sh+=`<div class="sc-row"><div class="sc-l">${sc.l}</div>`;
+    sh+=`<div class="sc-t"><div class="sc-f" style="width:${sc.v}%;background:${sc.c};"></div></div>`;
+    sh+=`<div class="sc-v" style="color:${sc.c};">${sc.v}%</div></div>`;
+  });
+  document.getElementById('sc-rows').innerHTML=sh;
+
+  let tip='';
+  if(pct===0)     tip='<b>Начни с дня 1.</b> Открой Сплит, выполни тренировку, отметь галочку.';
+  else if(pct<30) tip='<b>Хорошее начало.</b> Не пропускай больше одного дня подряд — первые 5 дней критичны.';
+  else if(pct<60) tip='<b>Хороший темп.</b> Заполняй дневник — это помогает видеть реальный прогресс.';
+  else if(pct<90) tip='<b>Почти финиш.</b> Оглянись на заметки — насколько изменился аим с дня 1?';
+  else            tip='<b>Курс завершён.</b> Сравни начальный и текущий ранг в "Моя Стата". Время следующего цикла.';
+  document.getElementById('tip').innerHTML=tip;
+
+  renderChart();
+  renderExportPreview();
+}
+
+/* =========================================
+   CHART
+========================================= */
+function renderChart() {
+  const cur = S();
+  const svg = document.getElementById('progress-chart');
+  if(!svg) return;
+
+  const W=500, H=160, PAD=40, CH=H-PAD*0.8;
+  const pts = [
+    {label:'Старт', kd:parseFloat(cur.initKd)||null, hs:parseFloat(cur.initHs)||null, adr:parseFloat(cur.initAdr)||null},
+    {label:'Нед.1', kd:parseFloat(cur.w1Kd)||null,   hs:parseFloat(cur.w1Hs)||null,   adr:parseFloat(cur.w1Adr)||null},
+    {label:'Нед.2', kd:parseFloat(cur.w2Kd)||null,   hs:parseFloat(cur.w2Hs)||null,   adr:parseFloat(cur.w2Adr)||null}
+  ];
+
+  const hasAny = pts.some(p=>p.kd||p.hs||p.adr);
+  if(!hasAny) {
+    svg.innerHTML=`<text x="250" y="85" text-anchor="middle" fill="#3a4d63" font-family="JetBrains Mono,monospace" font-size="12">Заполни стату в разделе «Моя Стата»</text>`;
+    return;
+  }
+
+  function norm(v, min, max) { return (v-min)/(max-min); }
+
+  // Normalize each metric to 0-1
+  const allKd = pts.map(p=>p.kd).filter(Boolean);
+  const allHs = pts.map(p=>p.hs).filter(Boolean);
+  const allAdr = pts.map(p=>p.adr).filter(Boolean);
+
+  const kdMin=Math.min(0,...allKd), kdMax=Math.max(3,...allKd);
+  const hsMin=0, hsMax=100;
+  const adrMin=0, adrMax=250;
+
+  const xStep = (W-PAD*2)/2;
+  function xPos(i){ return PAD + i*xStep; }
+  function yPos(n){ return PAD*0.4 + CH*(1-n); }
+
+  function polyline(values, color) {
+    const validPts = [];
+    values.forEach((v,i)=>{ if(v!==null) validPts.push(`${xPos(i)},${yPos(v)}`); });
+    if(validPts.length<1) return '';
+    if(validPts.length===1) return `<circle cx="${validPts[0].split(',')[0]}" cy="${validPts[0].split(',')[1]}" r="4" fill="${color}" opacity=".9"/>`;
+    return `<polyline points="${validPts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>` +
+      values.map((v,i)=>v!==null?`<circle cx="${xPos(i)}" cy="${yPos(v)}" r="4" fill="${color}"/>`:'').join('');
+  }
+
+  let content = '';
+  // Grid lines
+  for(let g=0;g<=4;g++){
+    const y=yPos(g/4);
+    content+=`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+  }
+  // X labels
+  pts.forEach((p,i)=>{
+    content+=`<text x="${xPos(i)}" y="${H-4}" text-anchor="middle" fill="#3a4d63" font-family="JetBrains Mono,monospace" font-size="10">${p.label}</text>`;
+  });
+  // Lines
+  content+=polyline(pts.map(p=>p.kd!==null?norm(p.kd,kdMin,kdMax):null), '#ff3d5a');
+  content+=polyline(pts.map(p=>p.hs!==null?norm(p.hs,hsMin,hsMax):null), '#00e5cc');
+  content+=polyline(pts.map(p=>p.adr!==null?norm(p.adr,adrMin,adrMax):null), '#ffb830');
+  // Legend
+  const legend=[['KD','#ff3d5a'],['HS%','#00e5cc'],['ADR','#ffb830']];
+  legend.forEach(([l,c],i)=>{
+    content+=`<rect x="${PAD+i*80}" y="4" width="10" height="10" rx="2" fill="${c}" opacity=".8"/>`;
+    content+=`<text x="${PAD+i*80+14}" y="13" fill="#7a8fa8" font-family="JetBrains Mono,monospace" font-size="10">${l}</text>`;
+  });
+
+  svg.innerHTML=content;
+}
+
+/* =========================================
+   EXPORT CARD
+========================================= */
+function renderExportPreview() {
+  const cur = S();
+  let done=0; for(let i=1;i<=14;i++) if(cur.done[i]) done++;
+  const pct=Math.round(done/14*100);
+  const rank = findRank(cur.initRank);
+  const el = document.getElementById('export-preview');
+  if(!el) return;
+  el.innerHTML=`<div class="export-card-preview" style="position:relative;">
+    <div style="position:relative;z-index:1;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:#3a4d63;margin-bottom:10px;">AIM TRACKER — ЦИКЛ ${GS.currentCycle+1}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:42px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#ff3d5a;line-height:1;">${pct}%</div>
+          <div style="font-size:12px;color:#7a8fa8;margin-top:4px;">${done}/14 дней выполнено</div>
+        </div>
+        <div style="display:flex;gap:20px;">
+          ${cur.initKd?`<div style="text-align:center;"><div style="font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#00e5cc;">${cur.initKd}</div><div style="font-size:10px;color:#3a4d63;">KD</div></div>`:''}
+          ${cur.initHs?`<div style="text-align:center;"><div style="font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#ffb830;">${cur.initHs}%</div><div style="font-size:10px;color:#3a4d63;">HS</div></div>`:''}
+          ${cur.initAdr?`<div style="text-align:center;"><div style="font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#b48eff;">${cur.initAdr}</div><div style="font-size:10px;color:#3a4d63;">ADR</div></div>`:''}
+        </div>
+      </div>
+      ${rank?`<div style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:6px;border:1px solid ${rank.color}33;background:${rank.color}11;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:${rank.color};">🏅 ${rank.name}</div>`:''}
+    </div>
+  </div>`;
+}
+
+window.exportCard = function() {
+  const cur = S();
+  let done=0; for(let i=1;i<=14;i++) if(cur.done[i]) done++;
+  const pct=Math.round(done/14*100);
+  const rank = findRank(cur.initRank);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#060810;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+    .card{background:linear-gradient(135deg,#0b0f1a,#0f1520);border:1px solid rgba(255,61,90,0.3);border-radius:20px;padding:32px;width:480px;position:relative;overflow:hidden;}
+    .card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,61,90,.04)1px,transparent 1px),linear-gradient(90deg,rgba(255,61,90,.04)1px,transparent 1px);background-size:30px 30px;}
+    .inner{position:relative;z-index:1;}
+    .logo{font-size:11px;letter-spacing:3px;color:#3a4d63;margin-bottom:16px;font-family:monospace;}
+    .pct{font-size:64px;font-weight:700;color:#ff3d5a;line-height:1;font-family:monospace;}
+    .sub{font-size:13px;color:#7a8fa8;margin-top:6px;}
+    .stats{display:flex;gap:24px;margin-top:20px;}
+    .s-item{text-align:center;}
+    .s-val{font-size:24px;font-weight:600;font-family:monospace;}
+    .s-lbl{font-size:10px;color:#3a4d63;margin-top:2px;}
+    .rank{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:5px 14px;border-radius:8px;font-family:monospace;font-size:13px;font-weight:600;}
+    .footer{margin-top:20px;font-size:10px;color:#3a4d63;letter-spacing:2px;font-family:monospace;}
+  </style><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"></head>
+  <body><div class="card"><div class="inner">
+    <div class="logo">AIM TRACKER — ЦИКЛ ${GS.currentCycle+1}</div>
+    <div class="pct">${pct}%</div>
+    <div class="sub">${done} из 14 дней выполнено · Streak: ${calcStreak(cur)}</div>
+    <div class="stats">
+      ${cur.initKd?`<div class="s-item"><div class="s-val" style="color:#00e5cc;">${cur.initKd}</div><div class="s-lbl">KD</div></div>`:''}
+      ${cur.initHs?`<div class="s-item"><div class="s-val" style="color:#ffb830;">${cur.initHs}%</div><div class="s-lbl">HS%</div></div>`:''}
+      ${cur.initAdr?`<div class="s-item"><div class="s-val" style="color:#b48eff;">${cur.initAdr}</div><div class="s-lbl">ADR</div></div>`:''}
+    </div>
+    ${rank?`<div class="rank" style="border:1px solid ${rank.color}44;background:${rank.color}11;color:${rank.color};">🏅 ${rank.name}</div>`:''}
+    <div class="footer">aim-tracker.local · ${new Date().toLocaleDateString('ru')}</div>
+  </div></div></body></html>`;
+
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aim-tracker-cycle${GS.currentCycle+1}.html`;
+  a.click();
+  showToast('✅ Карточка скачана!');
+};
+
+/* =========================================
+   ACHIEVEMENTS
+========================================= */
+let prevUnlocked = new Set();
+
+function getUnlocked() {
+  const cur = S();
+  return new Set(ACHIEVEMENTS.filter(a=>a.check(cur,GS)).map(a=>a.id));
+}
+
+function checkNewAchievements() {
+  const now = getUnlocked();
+  now.forEach(id=>{
+    if(!prevUnlocked.has(id)) {
+      const a = ACHIEVEMENTS.find(x=>x.id===id);
+      if(a) showToast(`${a.icon} Ачивка разблокирована: ${a.name}!`);
+    }
+  });
+  prevUnlocked = now;
+  renderAchievements();
+}
+
+function calcXP() {
+  const cur = S();
+  let xp=0;
+  for(let i=1;i<=14;i++) if(cur.done[i]) xp+=100;
+  xp += countNotes(cur)*20;
+  xp += getUnlocked().size*150;
+  return xp;
+}
+function xpLevel(xp) { return Math.floor(xp/500)+1; }
+function xpInLevel(xp) { return xp%500; }
+
+function renderAchievements() {
+  const unlocked = getUnlocked();
+  const xp = calcXP();
+  const lv = xpLevel(xp);
+  const inLv = xpInLevel(xp);
+
+  const wb = document.getElementById('xp-bar-wrap');
+  if(wb) wb.innerHTML=`
+    <div class="xp-level">LV${lv}</div>
+    <div class="xp-info">
+      <div class="xp-label">XP — ${xp} ОЧКОВ</div>
+      <div class="xp-bg"><div class="xp-fill" style="width:${Math.round(inLv/500*100)}%;"></div></div>
+      <div class="xp-val">${inLv} / 500 до следующего уровня</div>
+    </div>`;
+
+  const grid = document.getElementById('achv-grid');
+  if(!grid) return;
+  grid.innerHTML = ACHIEVEMENTS.map(a=>{
+    const ok = unlocked.has(a.id);
+    return `<div class="achv${ok?' unlocked':''}">
+      <div class="achv-icon">${a.icon}</div>
+      <div class="achv-info">
+        <div class="achv-name">${a.name}</div>
+        <div class="achv-desc">${a.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* =========================================
+   MY STATS TAB
+========================================= */
+window.applyPreset = function(rank, kd, hs, adr) {
+  const cur = S();
+  cur.initKd = kd; cur.initHs = hs; cur.initAdr = adr;
+  save();
+  // update inputs
+  const kdEl=document.getElementById('init-kd');
+  const hsEl=document.getElementById('init-hs');
+  const adrEl=document.getElementById('init-adr');
+  if(kdEl) kdEl.value=kd;
+  if(hsEl) hsEl.value=hs;
+  if(adrEl) adrEl.value=adr;
+  // highlight active preset btn
+  document.querySelectorAll('.rank-preset-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  updateMyStats();
+  showToast('✅ Пресет ' + event.target.textContent + ' применён');
+};
+
+function initMyStats() {
+  const cur = S();
+  function bind(id, key) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(el.tagName==='SELECT') {
+      el.value = cur[key]||'';
+      el.onchange = function(){ cur[key]=this.value; save(); updateMyStats(); };
+    } else if(el.tagName==='TEXTAREA') {
+      el.value = cur[key]||'';
+      el.oninput = function(){ cur[key]=this.value; save(); };
+    } else {
+      el.value = cur[key]||'';
+      el.oninput = function(){ cur[key]=this.value; save(); updateMyStats(); };
+    }
+  }
+  bind('init-kd','initKd'); bind('init-hs','initHs'); bind('init-adr','initAdr');
+  bind('init-rank','initRank'); bind('init-note','initNote');
+  bind('w1-kd','w1Kd'); bind('w1-hs','w1Hs'); bind('w1-adr','w1Adr'); bind('w1-note','w1Note');
+  bind('w2-kd','w2Kd'); bind('w2-hs','w2Hs'); bind('w2-adr','w2Adr'); bind('w2-note','w2Note');
+  updateMyStats();
+}
+
+function updateMyStats() {
+  const cur = S();
+  const initEl = document.getElementById('init-eval');
+  if(initEl) initEl.innerHTML = renderEvalBlock(cur.initKd, cur.initHs, cur.initAdr);
+  const w1El = document.getElementById('w1-eval');
+  if(w1El) w1El.innerHTML = renderEvalBlock(cur.w1Kd, cur.w1Hs, cur.w1Adr);
+  const w2El = document.getElementById('w2-eval');
+  if(w2El) w2El.innerHTML = renderEvalBlock(cur.w2Kd, cur.w2Hs, cur.w2Adr);
+  renderCompare();
+}
+
+function renderCompare() {
+  const cur = S();
+  const el = document.getElementById('progress-compare');
+  if(!el) return;
+
+  const hasInit = cur.initKd||cur.initHs||cur.initAdr;
+  const hasW1   = cur.w1Kd||cur.w1Hs||cur.w1Adr;
+  const hasW2   = cur.w2Kd||cur.w2Hs||cur.w2Adr;
+
+  if(!hasInit||(!hasW1&&!hasW2)) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div>Заполни начальную стату и хотя бы один недельный результат, чтобы увидеть прогресс.</div></div>';
+    return;
+  }
+
+  function delta(before, after, higher) {
+    const b=parseFloat(before), a=parseFloat(after);
+    if(isNaN(b)||isNaN(a)) return '<span class="td-delta same">—</span>';
+    const diff = a-b;
+    if(b===0) return '<span class="td-delta same">N/A</span>';
+    const pct = Math.round(diff/b*100);
+    const cls = diff>0?(higher?'up':'down'):(diff<0?(higher?'down':'up'):'same');
+    const sign = diff>0?'+':'';
+    return `<span class="td-delta ${cls}">${sign}${diff.toFixed(2)} (${sign}${pct}%)</span>`;
+  }
+
+  let h=`<div class="card"><table class="compare-table"><thead><tr><th>Метрика</th><th>Старт</th>`;
+  if(hasW1) h+=`<th>Неделя 1</th><th>Δ нед.1</th>`;
+  if(hasW2) h+=`<th>Неделя 2</th><th>Δ нед.2</th>`;
+  h+=`</tr></thead><tbody>`;
+
+  function row(name, initV, w1V, w2V, higher) {
+    h+=`<tr><td><b>${name}</b></td><td style="font-family:'JetBrains Mono',monospace;">${initV||'—'}</td>`;
+    if(hasW1) h+=`<td style="font-family:'JetBrains Mono',monospace;">${w1V||'—'}</td><td>${w1V&&initV?delta(initV,w1V,higher):'<span class="td-delta same">—</span>'}</td>`;
+    if(hasW2) h+=`<td style="font-family:'JetBrains Mono',monospace;">${w2V||'—'}</td><td>${w2V&&initV?delta(initV,w2V,higher):'<span class="td-delta same">—</span>'}</td>`;
+    h+=`</tr>`;
+  }
+  row('KD',  cur.initKd, cur.w1Kd, cur.w2Kd, true);
+  row('HS%', cur.initHs, cur.w1Hs, cur.w2Hs, true);
+  row('ADR', cur.initAdr,cur.w1Adr,cur.w2Adr,true);
+  h+=`</tbody></table></div>`;
+  el.innerHTML=h;
+}
+
+/* =========================================
+   EVAL ENGINE
+========================================= */
+function evalKD(val) {
+  // Valorant реальные пороги: <0.9 слабо, 0.9-1.3 норма, 1.3-2.0 хорошо, >2.0 идеал
+  const v=parseFloat(val); if(isNaN(v)) return null;
+  let score,grade;
+  if(v<0.9)      {score=Math.round(v/0.9*30);          grade='bad';}
+  else if(v<1.3) {score=Math.round(30+(v-0.9)/0.4*25); grade='normal';}
+  else if(v<2.0) {score=Math.round(55+(v-1.3)/0.7*30); grade='good';}
+  else            {score=Math.min(100,Math.round(85+(v-2.0)/0.5*15)); grade='great';}
+  return {score,grade,val:v.toFixed(2)};
+}
+function evalHS(val) {
+  // HS%: <15 слабо, 15-22 норма, 22-35 хорошо, >35 идеал
+  const v=parseFloat(val); if(isNaN(v)) return null;
+  let score,grade;
+  if(v<15)      {score=Math.round(v/15*30);          grade='bad';}
+  else if(v<22) {score=Math.round(30+(v-15)/7*25);  grade='normal';}
+  else if(v<35) {score=Math.round(55+(v-22)/13*30); grade='good';}
+  else           {score=Math.min(100,Math.round(85+(v-35)/15*15)); grade='great';}
+  return {score,grade,val:v.toFixed(1)+'%'};
+}
+function evalADR(val) {
+  // ADR: <100 слабо, 100-145 норма, 145-180 хорошо, >180 идеал
+  const v=parseFloat(val); if(isNaN(v)) return null;
+  let score,grade;
+  if(v<100)      {score=Math.round(v/100*30);          grade='bad';}
+  else if(v<145) {score=Math.round(30+(v-100)/45*25); grade='normal';}
+  else if(v<180) {score=Math.round(55+(v-145)/35*30); grade='good';}
+  else            {score=Math.min(100,Math.round(85+(v-180)/30*15)); grade='great';}
+  return {score,grade,val:Math.round(v)};
+}
+function gradeLabel(g){ return {bad:'СЛАБО',normal:'НОРМА',good:'ХОРОШО',great:'ИДЕАЛ'}[g]||''; }
+function gradeColor(g){ return {bad:'var(--red)',normal:'var(--gold)',good:'var(--teal)',great:'var(--green)'}[g]||'var(--t2)'; }
+function overallScore(kd,hs,adr){ let t=0,c=0; if(kd){t+=kd.score;c++;} if(hs){t+=hs.score;c++;} if(adr){t+=adr.score;c++;} return c?Math.round(t/c):null; }
+function scoreLabel(s){ if(s<35) return {text:'Нужно работать',color:'var(--red)'}; if(s<55) return {text:'Средний уровень',color:'var(--gold)'}; if(s<75) return {text:'Хороший уровень',color:'var(--teal)'}; return {text:'Топ уровень',color:'var(--green)'}; }
+
+function renderEvalBlock(kdVal,hsVal,adrVal) {
+  const kd=evalKD(kdVal),hs=evalHS(hsVal),adr=evalADR(adrVal);
+  const total=overallScore(kd,hs,adr);
+  if(total===null) return '';
+  const sl=scoreLabel(total);
+  function row(name,ev){
+    if(!ev) return '';
+    const pct=ev.score+'%', c=gradeColor(ev.grade), gl=gradeLabel(ev.grade);
+    return `<div class="eval-row">
+      <div class="eval-name">${name}</div>
+      <div class="eval-bar-wrap">
+        <div class="eval-bar-bg"><div class="eval-bar-fill" style="width:${pct};background:${c};"></div></div>
+        <div class="eval-bar-markers"><span>Слабо</span><span>Норма</span><span>Хорошо</span><span>Идеал</span></div>
+      </div>
+      <div class="eval-val" style="color:${c};">${ev.val}</div>
+      <div class="eval-grade grade-${ev.grade}">${gl}</div>
+    </div>`;
+  }
+  return `<div class="eval-card">
+    <div class="eval-title">ОЦЕНКА</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:48px;font-weight:600;color:${sl.color};line-height:1;">${total}</div>
+      <div><div style="font-size:14px;font-weight:600;color:${sl.color};">${sl.text}</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:3px;font-family:'JetBrains Mono',monospace;">из 100</div></div>
+    </div>
+    ${row('KD',kd)}${row('HS%',hs)}${row('ADR',adr)}
+  </div>`;
+}
+
+/* =========================================
+   RESET
+========================================= */
+window.resetCycle = function() {
+  if(!confirm(`Сбросить цикл ${GS.currentCycle+1}? Все данные этого цикла будут удалены.`)) return;
+  GS.cycles[GS.currentCycle] = newCycleObj();
+  save(); renderAll();
+  showToast(`🗑 Цикл ${GS.currentCycle+1} сброшен`);
+};
+window.resetAll = function() {
+  if(!confirm('Сбросить ВСЕ данные? Это действие необратимо.')) return;
+  GS = { cycles:[newCycleObj()], currentCycle:0 };
+  save(); renderAll();
+  showToast('🗑 Все данные удалены');
+};
+
+function renderAll() {
+  renderCycleBar(); renderSplit(); renderDiary(); updateHeaderCounters();
+  const name = ['split','diary','stats','mystats','achv'].find(n=>document.getElementById(n)&&document.getElementById(n).classList.contains('on'));
+  if(name==='stats')   renderStats();
+  if(name==='mystats') initMyStats();
+  if(name==='achv')    renderAchievements();
+}
+
+/* =========================================
+   INIT
+========================================= */
+prevUnlocked = getUnlocked();
+renderCycleBar();
+renderSplit();
+renderDiary();
+updateHeaderCounters();
+</script>
+</body>
+</html>
